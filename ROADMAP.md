@@ -3,12 +3,12 @@
 ## Game candidate
 
 - [x] Draw original uppercase, lowercase, numerals, punctuation, and useful accented Latin letters.
-- [x] Build Running, Satin, and Applique directions with a related Plain UI style.
+- [x] Build Running, Satin, Applique, and heavy Woven directions with a related Plain UI style.
 - [x] Export installable TTF and WOFF2 files from editable source drawings.
 - [x] Render matched large and 390 by 844 pixel phone specimens on light and dark backgrounds.
 - [x] Check character mapping, font names, outlines, metrics, kerning presence, and WOFF2 decoding.
 - [x] Repeat the build and compare output hashes.
-- [ ] Review Applique and Plain inside the Godot 4.7 game on an Android phone.
+- [ ] Review Woven and Plain inside the Godot 4.7 game on an Android phone.
 - [ ] Refine spacing and curves after actual device review, including small instruction text.
 
 ## Public gallery gate

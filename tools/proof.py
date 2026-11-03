@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "specimens"
-STYLES = ("Running", "Satin", "Applique", "Plain")
+STYLES = ("Running", "Satin", "Applique", "Plain", "Woven")
 WORDS = ("PLAY", "LEVELS", "SETTINGS", "SHIFT", "The First Stitch", "0123456789")
 SENTENCE = "A small shift can change a whole world."
 COLORS = {
@@ -26,6 +26,13 @@ def font(style, pixels):
 
 def meta(pixels):
     return ImageFont.truetype(META, pixels)
+
+
+def fitted_font(style, text, maximum, width):
+    size = maximum
+    while size > 15 and font(style, size).getlength(text) > width:
+        size -= 1
+    return font(style, size)
 
 
 def weave(draw, box, base, strand):
@@ -68,7 +75,8 @@ def phone_page(style, dark):
     weave(draw, (0, 0, 390, 844), background, strand)
     draw.text((24, 22), "390 x 844 px  /  1:1", font=meta(13), fill=text_color)
     draw.line((24, 54, 366, 54), fill=text_color, width=1)
-    draw.text((24, 77), "The First Stitch", font=font(style, 33), fill=text_color)
+    draw.text((24, 77), "The First Stitch",
+              font=fitted_font(style, "The First Stitch", 33, 342), fill=text_color)
     for index, word in enumerate(WORDS[:4]):
         y = 156 + index * 74
         draw.rounded_rectangle((22, y - 8, 368, y + 55), radius=9,
@@ -87,7 +95,7 @@ def phone_page(style, dark):
 
 
 def phone_contact_sheet():
-    canvas = Image.new("RGB", (1680, 1810), (226, 220, 205))
+    canvas = Image.new("RGB", (24 + len(STYLES) * 414, 1810), (226, 220, 205))
     draw = ImageDraw.Draw(canvas)
     draw.text((52, 20), "THREADLINE / MATCHED PHONE STUDIES", font=meta(30), fill=COLORS["ink"])
     for index, style in enumerate(STYLES):

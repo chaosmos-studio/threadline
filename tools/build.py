@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "source"))
 from paths import ACCENTS, GLYPHS  # noqa: E402
 
-STYLES = ("Running", "Satin", "Applique", "Plain")
+STYLES = ("Running", "Satin", "Applique", "Plain", "Woven")
 NARROW = "iljı!|':;.,`‘’¡"
 PAIR_VALUES = {
     "AV": -55, "AW": -35, "AY": -50, "AT": -30, "FA": -30,
@@ -48,6 +48,8 @@ def form(strokes, style):
     pieces = []
     cuts = []
     for points in strokes:
+        if style == "Woven":
+            points = [(x * 1.25, y) for x, y in points]
         line = LineString(points)
         if line.length < 25:
             pieces.append(Point(points[0]).buffer(24 if style == "Running" else 34, quad_segs=8))
@@ -58,23 +60,28 @@ def form(strokes, style):
                 if segment.length:
                     pieces.append(segment.buffer(16, cap_style="round", join_style="round", quad_segs=4))
         else:
-            radius = {"Satin": 43, "Applique": 55, "Plain": 36}[style]
+            radius = {"Satin": 43, "Applique": 55, "Plain": 36, "Woven": 77}[style]
             pieces.append(line.buffer(radius, cap_style="round", join_style="round", quad_segs=5))
-            if style in ("Satin", "Applique"):
-                step = 31 if style == "Satin" else 48
-                for distance in range(24, int(line.length) - 15, step):
+            if style in ("Satin", "Applique", "Woven"):
+                step = {"Satin": 31, "Applique": 48, "Woven": 29}[style]
+                for stitch_index, distance in enumerate(range(24, int(line.length) - 15, step)):
                     before = line.interpolate(max(0, distance - 5))
                     after = line.interpolate(min(line.length, distance + 5))
                     dx, dy = after.x - before.x, after.y - before.y
                     length = max((dx * dx + dy * dy) ** 0.5, 1)
                     nx, ny = -dy / length, dx / length
                     center = line.interpolate(distance)
-                    if style == "Satin":
+                    if style in ("Satin", "Woven"):
+                        half_width = 29 if style == "Satin" else 53
+                        skew = 5 if style == "Satin" else 10 + 2 * (stitch_index % 4)
                         slit = LineString([
-                            (center.x - nx * 29 - dx / length * 5, center.y - ny * 29 - dy / length * 5),
-                            (center.x + nx * 29 + dx / length * 5, center.y + ny * 29 + dy / length * 5),
+                            (center.x - nx * half_width - dx / length * skew,
+                             center.y - ny * half_width - dy / length * skew),
+                            (center.x + nx * half_width + dx / length * skew,
+                             center.y + ny * half_width + dy / length * skew),
                         ])
-                        cuts.append(slit.buffer(2.8, cap_style="round", quad_segs=3))
+                        cuts.append(slit.buffer(2.8 if style == "Satin" else 5,
+                                                cap_style="round", quad_segs=3))
                     else:
                         for side in (-1, 1):
                             slit = LineString([
@@ -110,7 +117,9 @@ def glyph_geometry(char, style):
                 mark_shape = translate(mark_shape, yoff=top - 700)
             marks.append(mark_shape)
         shape = unary_union([shape, *marks])
-    if is_narrow(char):
+    if style == "Woven":
+        shape = translate(shape, xoff=45 - shape.bounds[0])
+    elif is_narrow(char):
         shape = translate(shape, xoff=-140)
     return shape
 
@@ -173,6 +182,8 @@ def save_woff2(path):
 
 def build(style, characters):
     family = f"Threadline {style}"
+    ascent = 1050 if style == "Woven" else 1000
+    descent = 320 if style == "Woven" else 300
     order = [".notdef", "space"] + [f"uni{ord(char):04X}" for char in sorted(characters)]
     notdef = Point(300, 350).buffer(225).boundary.buffer(28)
     glyphs = {".notdef": to_glyph(notdef), "space": TTGlyphPen(None).glyph()}
@@ -181,7 +192,14 @@ def build(style, characters):
     for char in sorted(characters):
         name = f"uni{ord(char):04X}"
         shape = glyph_geometry(char, style)
-        advance = 350 if is_narrow(char) else 560 if char in "ft()[]{}" else 600
+        if style == "Woven":
+            advance = round(shape.bounds[2] + 45)
+        elif is_narrow(char):
+            advance = 350
+        elif char in "ft()[]{}":
+            advance = 560
+        else:
+            advance = 600
         glyphs[name] = to_glyph(shape)
         metrics[name] = (advance, round(shape.bounds[0]))
         cmap[ord(char)] = name
@@ -190,7 +208,7 @@ def build(style, characters):
     builder.setupCharacterMap(cmap)
     builder.setupGlyf(glyphs)
     builder.setupHorizontalMetrics(metrics)
-    builder.setupHorizontalHeader(ascent=1000, descent=-300)
+    builder.setupHorizontalHeader(ascent=ascent, descent=-descent)
     builder.setupNameTable({
         "familyName": family,
         "styleName": "Regular",
@@ -204,8 +222,9 @@ def build(style, characters):
     })
     builder.setupOS2(
         version=4,
-        sTypoAscender=1000, sTypoDescender=-300, usWinAscent=1000, usWinDescent=300,
-        sxHeight=490, sCapHeight=700, usWeightClass=400 if style in ("Running", "Plain") else 700,
+        sTypoAscender=ascent, sTypoDescender=-descent,
+        usWinAscent=ascent, usWinDescent=descent,
+        sxHeight=490, sCapHeight=700, usWeightClass=800 if style == "Woven" else 400 if style in ("Running", "Plain") else 700,
         fsSelection=0xC0, fsType=0,
     )
     builder.setupPost()

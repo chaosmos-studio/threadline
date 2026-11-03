@@ -12,16 +12,19 @@ Version 0.2.0 is an installable design candidate for the game, pending review in
 | Satin | Broad paths contain short transverse thread channels. | Short display labels |
 | Applique | Wide cut-cloth paths have fine stitch cuts along both edges. | Menu titles and level names |
 | Plain | The same letter skeletons become clean, continuous strokes. | HUD, settings, and instructions |
+| Woven | Extra-wide letter paths hold dense angled thread cuts inside a heavy outline. | Home menu, level names, and short calls to action |
 
-**Recommendation:** Use Threadline Applique for titles at 30 px or larger and Threadline Plain for small interface text at 19 px or larger.
-The running construction loses contrast on a phone, and the satin channels close up in small text.
-The Plain style keeps the family shape while leaving the texture to the larger display lettering.
+**Recommendation:** Use Threadline Woven for the home menu, level names, and short prominent labels.
+Use Threadline Plain for longer settings and instruction text.
+Woven stretches the original letter paths horizontally by one quarter and gives them a much heavier thread band.
+Its angled cuts follow each path and leave a strong silhouette at phone size.
+The Plain style keeps the same letter skeletons for quieter text.
 The `I` has crossbars, `l` has a foot, `1` has an angled head and base, and `0` has an internal slash.
 Small, consistent joins let repeated letters keep the same rhythm without loose ends or decorative knots.
 
 ## Specimens
 
-[Matched phone comparison](specimens/phone-comparison.png) shows all four styles at 390 by 844 pixels, one image pixel per screen pixel, on linen and a dark night palette.
+[Matched phone comparison](specimens/phone-comparison.png) shows all five styles at 390 by 844 pixels, one image pixel per screen pixel, on linen and a dark night palette.
 Each style also has a [large specimen](specimens/applique-large.png) and separate 390 by 844 pixel phone images in `specimens/`.
 Every direction shows PLAY, LEVELS, SETTINGS, SHIFT, "The First Stitch", 0-9, and the same mixed-case sentence.
 The specimens include accent and ambiguity checks.
@@ -31,7 +34,7 @@ The specimens include accent and ambiguity checks.
 ## Files and build
 
 - `source/paths.py` contains the editable original glyph centerlines and accent drawings.
-- `tools/build.py` converts those drawings into scalable outlines and builds four TTF and WOFF2 pairs in `fonts/`.
+- `tools/build.py` converts those drawings into scalable outlines and builds five TTF and WOFF2 pairs in `fonts/`.
 - `tools/proof.py` generates the matched specimen images.
 - `tools/check.py` checks mapping, names, outlines, horizontal and vertical metrics, and WOFF2 decoding.
 - `OFL.txt` is the SIL Open Font License 1.1 for the sources and exports.
@@ -41,7 +44,7 @@ Run `python3 -m pip install -r requirements.txt`, then `python3 tools/build.py`,
 The build can use the system `brotli` command when the pinned Python Brotli package is unavailable.
 On this machine, two consecutive builds produced identical TTF and WOFF2 hashes.
 
-All four fonts map 291 characters.
+All five fonts map 291 characters.
 They include uppercase, lowercase, numerals, printable ASCII symbols, typographic punctuation, common currency marks, Latin-1 accents, and many extended Latin letters.
 The font files have installable embedding permissions and a small GPOS kerning set for common display pairs.
 
