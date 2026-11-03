@@ -53,10 +53,10 @@ def form(strokes, style):
             pieces.append(Point(points[0]).buffer(24 if style == "Running" else 34, quad_segs=8))
             continue
         if style == "Running":
-            for start in range(0, int(line.length) + 1, 78):
-                segment = substring(line, start, min(start + 57, line.length))
+            for start in range(0, int(line.length) + 1, 108):
+                segment = substring(line, start, min(start + 55, line.length))
                 if segment.length:
-                    pieces.append(segment.buffer(19, cap_style="round", join_style="round", quad_segs=4))
+                    pieces.append(segment.buffer(16, cap_style="round", join_style="round", quad_segs=4))
         else:
             radius = {"Satin": 43, "Applique": 55, "Plain": 36}[style]
             pieces.append(line.buffer(radius, cap_style="round", join_style="round", quad_segs=5))
