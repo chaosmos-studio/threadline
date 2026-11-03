@@ -1,20 +1,45 @@
-"""Check that both proof fonts contain the intended printable glyph set."""
+"""Check exports, coverage, metrics, outlines, and WOFF2 round trips."""
 
 from pathlib import Path
 
 from fontTools.ttLib import TTFont
 
+from build import STYLES, ensure_brotli, wanted_characters
 
-root = Path(__file__).resolve().parents[1]
-expected = set(range(32, 127))
-for style in ("Running", "Satin"):
-    path = root / "fonts" / f"Threadline-{style}.ttf"
+
+ROOT = Path(__file__).resolve().parents[1]
+EXPECTED = {32, *(ord(char) for char in wanted_characters())}
+PROOF_TEXT = "PLAY LEVELS SETTINGS SHIFT The First Stitch 0123456789 A small shift can change a whole world. Il1 O0 Café forêt naïve Ångström"
+
+
+def check(style):
+    path = ROOT / "fonts" / f"Threadline-{style}.ttf"
+    woff_path = path.with_suffix(".woff2")
     font = TTFont(path)
-    mapped = set(font.getBestCmap())
-    assert mapped == expected, (style, sorted(expected - mapped), sorted(mapped - expected))
-    assert font["head"].unitsPerEm == 1000
-    assert font["name"].getDebugName(4) == f"Threadline {style}"
-    for codepoint, glyph_name in font.getBestCmap().items():
-        if codepoint != 32:
-            assert font["glyf"][glyph_name].numberOfContours > 0, (style, codepoint)
-    print(f"{style}: {len(mapped)} glyphs, valid names and outlines")
+    webfont = TTFont(woff_path)
+    cmap = font.getBestCmap()
+    assert set(cmap) == EXPECTED, style
+    assert webfont.getBestCmap() == cmap, style
+    assert set(map(ord, PROOF_TEXT)) <= set(cmap), style
+    assert font["head"].unitsPerEm == 1000, style
+    assert font["OS/2"].fsType == 0, style
+    assert font["OS/2"].fsSelection & 0x80, style
+    assert font["OS/2"].usWinAscent >= font["head"].yMax, style
+    assert font["OS/2"].usWinDescent >= -font["head"].yMin, style
+    assert "GPOS" in font, style
+    assert font["name"].getDebugName(1) == f"Threadline {style}", style
+    assert font["name"].getDebugName(2) == "Regular", style
+    assert webfont.flavor == "woff2", style
+    for codepoint, name in cmap.items():
+        if codepoint == 32:
+            continue
+        glyph = font["glyf"][name]
+        assert glyph.numberOfContours > 0, (style, codepoint)
+        assert font["hmtx"][name][1] == glyph.xMin, (style, codepoint)
+    print(f"{style}: {len(cmap)} mapped characters, TTF and WOFF2 pass")
+
+
+if __name__ == "__main__":
+    ensure_brotli()
+    for variant in STYLES:
+        check(variant)
