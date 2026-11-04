@@ -5,6 +5,8 @@ from random import Random
 
 from PIL import Image, ImageDraw, ImageFont
 
+from build import STYLES
+
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "specimens"
@@ -122,5 +124,5 @@ if __name__ == "__main__":
     preview()
     phone(False)
     phone(True)
-    for variant in ("Satin", "Woven", "Chain"):
+    for variant in STYLES:
         glyphs(variant)

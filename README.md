@@ -15,7 +15,10 @@ Download the [TTF and WOFF2 files](fonts/) or browse [versioned releases](https:
 ![Threadline on light linen at phone size](specimens/phone-linen.png)
 ![Threadline on a dark background at phone size](specimens/phone-night.png)
 
+![Threadline Running alphabet and selected symbols](specimens/glyphs-running.png)
 ![Threadline Satin alphabet and selected symbols](specimens/glyphs-satin.png)
+![Threadline Applique alphabet and selected symbols](specimens/glyphs-applique.png)
+![Threadline Plain alphabet and selected symbols](specimens/glyphs-plain.png)
 ![Threadline Woven alphabet and selected symbols](specimens/glyphs-woven.png)
 ![Threadline Chain alphabet and selected symbols](specimens/glyphs-chain.png)
 
