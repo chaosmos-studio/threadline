@@ -1,31 +1,24 @@
-# Threadline
+<p align="center">
+  <img src="specimens/wordmark.png" alt="Threadline" width="700">
+</p>
 
-Threadline is an original family of type studies drawn for stitched cloth interfaces.
-The first proof has two styles.
-**Running** uses separated needle strokes.
-**Satin** uses a broad yarn shape with angled stitch channels.
+Threadline is a family of drawn thread paths for games and cloth inspired interfaces.
+Its styles are Running, Satin, Applique, Plain, Woven, and Chain.
+Woven suits large titles, while Satin and Plain remain clearer at smaller sizes.
 
-![First Threadline specimen](specimens/first-proofs.png)
+Download the [TTF and WOFF2 files](fonts/) or browse [versioned releases](https://github.com/chaosmos-studio/threadline/releases).
 
-## Status
+## Specimens
 
-These are design proofs, version 0.1.0.
-They contain the 95 printable ASCII characters and are usable for testing, but they are not ready for font galleries or Google Fonts.
-The lowercase, spacing, kerning, curves, diacritics, and small-size rendering need further work.
-No Google Fonts submission has been made.
+![Threadline styles](specimens/preview.png)
 
-## Files
+![Threadline on light linen at phone size](specimens/phone-linen.png)
+![Threadline on a dark background at phone size](specimens/phone-night.png)
 
-- `source/paths.py` holds the original editable glyph skeletons.
-- `tools/build.py` turns those drawings into scalable TTF outlines.
-- `tools/proof.py` renders the visual specimen.
-- `fonts/` contains the current TTF proofs.
-
-## Build
-
-Use Python 3.14 and install the pinned packages in `requirements.txt`.
-Run `python3 tools/build.py` and `python3 tools/proof.py` from the repository root.
+![Threadline Satin alphabet and selected symbols](specimens/glyphs-satin.png)
+![Threadline Woven alphabet and selected symbols](specimens/glyphs-woven.png)
+![Threadline Chain alphabet and selected symbols](specimens/glyphs-chain.png)
 
 ## License
 
-The font source and binaries are licensed under the SIL Open Font License 1.1 in [OFL.txt](OFL.txt).
+Threadline is available under the [SIL Open Font License 1.1](OFL.txt).
