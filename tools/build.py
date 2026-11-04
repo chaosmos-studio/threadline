@@ -173,6 +173,8 @@ def glyph_geometry(char, style):
         shape = translate(shape, xoff=bearing - shape.bounds[0])
     elif is_narrow(char):
         shape = translate(shape, xoff=-140)
+    elif char in "@Ww":
+        shape = translate(shape, xoff=35 - shape.bounds[0])
     return shape
 
 
@@ -252,6 +254,7 @@ def build(style, characters):
             advance = 560
         else:
             advance = 600
+        advance = max(advance, round(shape.bounds[2] + 35))
         glyphs[name] = to_glyph(shape)
         metrics[name] = (advance, round(shape.bounds[0]))
         cmap[ord(char)] = name

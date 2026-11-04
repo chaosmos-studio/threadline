@@ -42,6 +42,8 @@ def check(style):
         glyph = font["glyf"][name]
         assert glyph.numberOfContours > 0, (style, codepoint)
         assert font["hmtx"][name][1] == glyph.xMin, (style, codepoint)
+        if 33 <= codepoint <= 126:
+            assert font["hmtx"][name][0] >= glyph.xMax, (style, codepoint)
     print(f"{style}: {len(cmap)} mapped characters, TTF and WOFF2 pass")
 
 
