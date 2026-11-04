@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fontTools.ttLib import TTFont
 
-from build import STYLES, ensure_brotli, wanted_characters
+from build import STYLES, VERSION, ensure_brotli, wanted_characters
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,6 +34,7 @@ def check(style):
     family = "Threadline Stitched UI" if style == "StitchedUI" else f"Threadline {style}"
     assert font["name"].getDebugName(1) == family, style
     assert font["name"].getDebugName(2) == "Regular", style
+    assert font["name"].getDebugName(5) == f"Version {VERSION}", style
     assert webfont.flavor == "woff2", style
     for codepoint, name in cmap.items():
         if codepoint == 32:

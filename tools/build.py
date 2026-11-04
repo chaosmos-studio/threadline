@@ -17,6 +17,7 @@ from shapely.ops import substring, unary_union
 
 
 ROOT = Path(__file__).resolve().parents[1]
+VERSION = "0.2.0"
 sys.path.insert(0, str(ROOT / "source"))
 from paths import ACCENTS, CHAIN_GLYPHS, GLYPHS  # noqa: E402
 
@@ -263,10 +264,10 @@ def build(style, characters):
     builder.setupNameTable({
         "familyName": family,
         "styleName": "Regular",
-        "uniqueFontIdentifier": f"{family} 0.2.0",
+        "uniqueFontIdentifier": f"{family} {VERSION}",
         "fullName": family,
         "psName": f"Threadline{style}-Regular",
-        "version": "Version 0.2.0",
+        "version": f"Version {VERSION}",
         "copyright": "Copyright 2026 The Threadline Project Authors",
         "licenseDescription": "This Font Software is licensed under the SIL Open Font License, Version 1.1.",
         "licenseInfoURL": "https://openfontlicense.org/open-font-license-official-text/",
