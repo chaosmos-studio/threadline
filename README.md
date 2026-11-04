@@ -5,6 +5,7 @@
 Threadline is a family of drawn thread paths for games and cloth inspired interfaces.
 Its styles are Running, Satin, Applique, Plain, Woven, and Chain.
 Woven suits large titles, while Satin and Plain remain clearer at smaller sizes.
+Each style maps 291 characters: printable ASCII, selected accented Latin letters, and useful symbols.
 
 Download the [TTF and WOFF2 files](fonts/) or browse [versioned releases](https://github.com/chaosmos-studio/threadline/releases).
 
