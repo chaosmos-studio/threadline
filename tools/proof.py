@@ -2,12 +2,12 @@
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "specimens"
-STYLES = ("Running", "Satin", "Applique", "Plain", "Woven")
+STYLES = ("Running", "Satin", "Applique", "Plain", "Woven", "Chain")
 WORDS = ("PLAY", "LEVELS", "SETTINGS", "SHIFT", "The First Stitch", "0123456789")
 SENTENCE = "A small shift can change a whole world."
 COLORS = {
@@ -108,6 +108,83 @@ def phone_contact_sheet():
     print(target)
 
 
+def raised_text(canvas, position, content, pixels, thread_color, shade_color, highlight_color):
+    mask = Image.new("L", canvas.size)
+    ImageDraw.Draw(mask).text(position, content, font=font("Chain", pixels), fill=255)
+    shadow = ImageChops.offset(mask, 4, 5).filter(ImageFilter.GaussianBlur(3))
+    canvas.paste(shade_color, (0, 0), shadow)
+    canvas.paste(thread_color, (0, 0), mask)
+    highlight = ImageChops.subtract(mask, ImageChops.offset(mask, 0, 2))
+    canvas.paste(highlight_color, (0, 0), highlight)
+
+
+def chain_cloth_page():
+    canvas = Image.new("RGB", (1600, 1000), (231, 216, 188))
+    draw = ImageDraw.Draw(canvas)
+    weave(draw, (0, 0, 1600, 1000), (231, 216, 188), (225, 208, 178))
+    draw.rounded_rectangle((62, 60, 1538, 940), radius=38,
+                           fill=(247, 237, 218), outline=(177, 139, 115), width=4)
+    for x in range(88, 1518, 22):
+        draw.line((x, 83, x + 11, 83), fill=(178, 129, 111), width=3)
+        draw.line((x, 916, x + 11, 916), fill=(178, 129, 111), width=3)
+    for y in range(106, 906, 22):
+        draw.line((85, y, 85, y + 11), fill=(178, 129, 111), width=3)
+        draw.line((1515, y, 1515, y + 11), fill=(178, 129, 111), width=3)
+    draw.text((120, 108), "THREADLINE CHAIN / CLOTH STUDY", font=meta(24), fill=(100, 80, 69))
+    raised_text(canvas, (112, 176), "SHIFT", 198,
+                (161, 69, 67), (83, 47, 47), (224, 129, 111))
+    raised_text(canvas, (120, 415), "The First Stitch", 78,
+                (67, 93, 77), (40, 58, 51), (148, 174, 146))
+    draw = ImageDraw.Draw(canvas)
+    draw.text((125, 568), "PLAY   LEVELS   SETTINGS", font=font("Chain", 47), fill=(66, 59, 57))
+    draw.text((125, 680), SENTENCE,
+              font=fitted_font("Chain", SENTENCE, 39, 900), fill=(66, 59, 57))
+    draw.text((125, 802), "0123456789     Il1  O0", font=font("Chain", 40), fill=(66, 59, 57))
+    draw.rounded_rectangle((1080, 155, 1455, 830), radius=28,
+                           fill=(48, 60, 64), outline=(98, 112, 103), width=5)
+    for y in range(180, 810, 21):
+        draw.line((1102, y, 1114, y), fill=(104, 121, 107), width=2)
+        draw.line((1422, y, 1434, y), fill=(104, 121, 107), width=2)
+    raised_text(canvas, (1120, 235), "PLAY", 62,
+                (246, 218, 154), (38, 42, 44), (255, 242, 196))
+    raised_text(canvas, (1120, 350), "LEVELS", 48,
+                (246, 218, 154), (38, 42, 44), (255, 242, 196))
+    raised_text(canvas, (1120, 460), "SETTINGS", 38,
+                (246, 218, 154), (38, 42, 44), (255, 242, 196))
+    draw = ImageDraw.Draw(canvas)
+    draw.text((1120, 670), "SHIFT  01 / 09", font=font("Chain", 27), fill=(244, 230, 202))
+    target = OUTPUT / "chain-cloth.png"
+    canvas.save(target, optimize=True)
+    print(target)
+
+
+def chain_glyph_page():
+    rows = (
+        "ABCDEFGHIJKLM",
+        "NOPQRSTUVWXYZ",
+        "abcdefghijklm",
+        "nopqrstuvwxyz",
+        "0123456789!?&",
+        "ÀÁÂÄÅÆÇÈÉÊËÌÍ",
+        "àáâäåæçèéêëìí",
+        "ÑÖØÙÜÝßœøłđþ€",
+    )
+    canvas = Image.new("RGB", (1600, 1120), (245, 235, 215))
+    draw = ImageDraw.Draw(canvas)
+    weave(draw, (0, 0, 1600, 1120), (245, 235, 215), (238, 225, 203))
+    draw.text((75, 38), "THREADLINE CHAIN / GLYPH REVIEW", font=meta(30), fill=(94, 71, 65))
+    for row_index, row in enumerate(rows):
+        top = 115 + row_index * 122
+        for column, char in enumerate(row):
+            left = 68 + column * 112
+            draw.rounded_rectangle((left, top, left + 100, top + 105), radius=9,
+                                   outline=(210, 191, 166), width=2)
+            draw.text((left + 18, top + 11), char, font=font("Chain", 68), fill=(62, 54, 52))
+    target = OUTPUT / "chain-glyphs.png"
+    canvas.save(target, optimize=True)
+    print(target)
+
+
 if __name__ == "__main__":
     OUTPUT.mkdir(exist_ok=True)
     for variant in STYLES:
@@ -115,3 +192,5 @@ if __name__ == "__main__":
         phone_page(variant, False)
         phone_page(variant, True)
     phone_contact_sheet()
+    chain_cloth_page()
+    chain_glyph_page()
