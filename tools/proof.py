@@ -1,8 +1,14 @@
 """Render matched large and one-pixel-per-pixel phone specimens."""
 
 from pathlib import Path
+from random import Random
+import sys
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
+from shapely.geometry import LineString
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "source"))
+from paths import GLYPHS, STITCHED_GLYPHS  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,6 +50,23 @@ def weave(draw, box, base, strand):
         draw.line((x0, y, x1, y), fill=strand, width=1)
 
 
+def natural_weave(canvas, base, seed=2604):
+    draw = ImageDraw.Draw(canvas)
+    draw.rectangle((0, 0, canvas.width, canvas.height), fill=base)
+    random = Random(seed)
+    strength = 7 if sum(base) > 400 else 4
+    for y in range(0, canvas.height, 6):
+        for x in range(0, canvas.width, 6):
+            vx = x + random.choice((-1, 0, 0, 1))
+            hy = y + random.choice((-1, 0, 0, 1))
+            vshade = random.randint(-strength, strength)
+            hshade = random.randint(-strength, strength)
+            vertical = tuple(max(0, min(255, channel + vshade)) for channel in base)
+            horizontal = tuple(max(0, min(255, channel + hshade)) for channel in base)
+            draw.line((vx, y, vx, y + 4), fill=vertical, width=2)
+            draw.line((x, hy + 3, x + 4, hy + 3), fill=horizontal, width=1)
+
+
 def direction_page(style):
     canvas = Image.new("RGB", (1600, 1190), COLORS["linen"])
     draw = ImageDraw.Draw(canvas)
@@ -72,7 +95,10 @@ def phone_page(style, dark):
     strand = (47, 50, 76) if dark else (235, 222, 199)
     canvas = Image.new("RGB", (390, 844), background)
     draw = ImageDraw.Draw(canvas)
-    weave(draw, (0, 0, 390, 844), background, strand)
+    if style in ("Stitched", "StitchedUI"):
+        natural_weave(canvas, background)
+    else:
+        weave(draw, (0, 0, 390, 844), background, strand)
     draw.text((24, 22), "390 x 844 px  /  1:1", font=meta(13), fill=text_color)
     draw.line((24, 54, 366, 54), fill=text_color, width=1)
     draw.text((24, 77), "The First Stitch",
@@ -112,13 +138,67 @@ def raised_text(canvas, position, content, pixels, thread_color, shade_color, hi
                 style="Chain"):
     mask = Image.new("L", canvas.size)
     ImageDraw.Draw(mask).text(position, content, font=font(style, pixels), fill=255)
+    if style == "Stitched":
+        shadow = ImageChops.offset(mask, 2, 3).filter(ImageFilter.GaussianBlur(5))
+        canvas.paste(shade_color, (0, 0), shadow.point(lambda value: round(value * 0.28)))
+        underlay = mask.filter(ImageFilter.MaxFilter(3))
+        groove_color = tuple(round(channel * 0.88) for channel in thread_color)
+        canvas.paste(groove_color, (0, 0), underlay)
+        thread_layer = Image.new("RGB", canvas.size, thread_color)
+        thread_draw = ImageDraw.Draw(thread_layer)
+        if pixels >= 100:
+            face = font(style, pixels)
+            random = Random(sum(ord(char) for char in content) + pixels)
+            bounds = mask.getbbox()
+            if bounds:
+                for _ in range((bounds[2] - bounds[0]) * (bounds[3] - bounds[1]) // 6):
+                    x = random.randrange(bounds[0], bounds[2])
+                    y = random.randrange(bounds[1], bounds[3])
+                    if mask.getpixel((x, y)):
+                        change = random.randrange(-9, 10)
+                        tone = tuple(max(0, min(255, channel + change)) for channel in thread_color)
+                        thread_draw.point((x, y), fill=tone)
+            for index, char in enumerate(content):
+                if char not in GLYPHS:
+                    continue
+                left = position[0] + face.getlength(content[:index])
+                box = thread_draw.textbbox((left, position[1]), char, font=face)
+                strokes = STITCHED_GLYPHS.get(char, GLYPHS[char])
+                points = [(x * 1.12, y) for stroke in strokes for x, y in stroke]
+                min_x = min(x for x, _ in points) - 108
+                max_x = max(x for x, _ in points) + 108
+                min_y = min(y for _, y in points) - 108
+                max_y = max(y for _, y in points) + 108
+                x_scale = (box[2] - box[0]) / (max_x - min_x)
+                y_scale = (box[3] - box[1]) / (max_y - min_y)
+                for stroke in strokes:
+                    line = LineString([(x * 1.12, y) for x, y in stroke])
+                    distance = 6
+                    while distance < line.length:
+                        center = line.interpolate(distance)
+                        before = line.interpolate(max(0, distance - 4))
+                        after = line.interpolate(min(line.length, distance + 4))
+                        dx, dy = after.x - before.x, after.y - before.y
+                        length = max((dx * dx + dy * dy) ** 0.5, 1)
+                        nx, ny = -dy / length, dx / length
+                        endpoints = []
+                        half_width = 98 + random.randrange(7)
+                        for side in (-1, 1):
+                            x = center.x + nx * side * half_width
+                            y = center.y + ny * side * half_width
+                            endpoints.append((box[0] + (x - min_x) * x_scale,
+                                              box[3] - (y - min_y) * y_scale))
+                        change = random.choice((-7, -3, 6, 9, 12))
+                        tone = tuple(max(0, min(255, channel + change)) for channel in thread_color)
+                        thread_draw.line(endpoints, fill=tone, width=1)
+                        distance += random.choice((9, 10, 11, 12))
+        canvas.paste(thread_layer, (0, 0), mask)
+        highlight = ImageChops.subtract(mask, ImageChops.offset(mask, 0, 1))
+        canvas.paste(highlight_color, (0, 0),
+                     highlight.point(lambda value: round(value * 0.22)))
+        return
     shadow = ImageChops.offset(mask, 4, 5).filter(ImageFilter.GaussianBlur(3))
     canvas.paste(shade_color, (0, 0), shadow)
-    if style == "Stitched":
-        underlay = Image.new("L", canvas.size)
-        ImageDraw.Draw(underlay).text(position, content, font=font(style, pixels), fill=255,
-                                        stroke_width=max(1, pixels // 180), stroke_fill=255)
-        canvas.paste(shade_color, (0, 0), underlay)
     canvas.paste(thread_color, (0, 0), mask)
     highlight = ImageChops.subtract(mask, ImageChops.offset(mask, 0, 2))
     canvas.paste(highlight_color, (0, 0), highlight)
@@ -194,11 +274,8 @@ def glyph_page(style):
 
 def stitched_reference_page():
     canvas = Image.new("RGB", (1600, 1000), (227, 226, 216))
+    natural_weave(canvas, (227, 226, 216))
     draw = ImageDraw.Draw(canvas)
-    for x in range(0, 1600, 5):
-        draw.line((x, 0, x, 1000), fill=(218, 218, 208), width=1)
-    for y in range(0, 1000, 6):
-        draw.line((0, y, 1600, y), fill=(214, 215, 205), width=1)
     draw.text((82, 58), "THREADLINE STITCHED / SATIN EMBROIDERY STUDY",
               font=meta(25), fill=(68, 66, 62))
     for left, glyph, colors in (
@@ -227,8 +304,7 @@ def stitched_pair_phone(dark):
     title_color = (251, 200, 144) if dark else (169, 66, 73)
     canvas = Image.new("RGB", (390, 844), background)
     draw = ImageDraw.Draw(canvas)
-    weave(draw, (0, 0, 390, 844), background,
-          (48, 58, 64) if dark else (235, 222, 199))
+    natural_weave(canvas, background)
     draw.text((24, 24), "390 x 844 px / 1:1", font=meta(13), fill=ink)
     draw.line((24, 55, 366, 55), fill=ink, width=1)
     draw.text((24, 80), "SHIFT", font=font("Stitched", 65), fill=title_color)

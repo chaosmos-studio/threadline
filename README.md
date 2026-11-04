@@ -14,12 +14,12 @@ Version 0.2.0 is an installable design candidate for the game, pending review in
 | Plain | The same letter skeletons become clean, continuous strokes. | HUD, settings, and instructions |
 | Woven | Extra-wide letter paths hold dense angled thread cuts inside a heavy outline. | Home menu, level names, and short calls to action |
 | Chain | Softly turned, bouncy letter paths hold spaced loop openings and small needle entries. | Embroidered titles, buttons, and level names |
-| Stitched | Broad letter shapes are filled with dense transverse satin-stitch cuts that turn with each stroke. | Large titles and level names |
+| Stitched | Overlapping satin strands make broad letters with fine directional grooves and gently uneven edges. | Large titles and level names |
 | Stitched UI | The same letter shapes have a clean solid fill and lighter weight. | Buttons, HUD, settings, and instructions |
 
 **Recommendation:** Use Threadline Stitched for large titles and Threadline Stitched UI for menu labels and smaller text.
-The Stitched letters are filled shapes, with closely spaced cuts that follow the local stitch direction.
-Separate stroke layers keep the stitches aligned at joins and preserve the counters.
+The Stitched letters are built from short transverse strands over a narrow sewn core.
+Fine grooves follow each stroke, and later strokes cover the grooves beneath them at joins.
 The UI companion keeps the same wide, rounded letter shapes without dense stitch detail.
 Threadline Chain remains in `fonts/` as the previous design backup.
 The `I` has crossbars, `l` has a foot, `1` has an angled head and base, and `0` has an internal slash.
@@ -33,7 +33,7 @@ Every direction shows PLAY, LEVELS, SETTINGS, SHIFT, "The First Stitch", 0-9, an
 The specimens include accent and ambiguity checks.
 [Stitched embroidery study](specimens/stitched-embroidery.png) uses three colored capital letters to show the intended satin stitch construction.
 [Paired phone sheets](specimens/stitched-pair-linen.png) show Stitched with Stitched UI at actual phone size on linen and [dark cloth](specimens/stitched-pair-night.png).
-The colored study adds a dark underlay, highlight, and soft shadow for presentation.
+The colored study adds a darker thread underlay, directional highlights, and a soft shadow for presentation.
 The font files are monochrome outlines, so games can set the thread color as needed.
 [Chain cloth study](specimens/chain-cloth.png) shows the backup Chain outlines with color and lighting effects.
 [Chain glyph review](specimens/chain-glyphs.png) shows the full basic alphabet, numerals, and selected accented letters at a larger size.

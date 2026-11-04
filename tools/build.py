@@ -11,7 +11,7 @@ from fontTools.feaLib.builder import addOpenTypeFeaturesFromString
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from shapely.affinity import rotate, scale, translate
-from shapely.geometry import GeometryCollection, LineString, Point
+from shapely.geometry import LineString, Point
 from shapely.geometry.polygon import orient
 from shapely.ops import substring, unary_union
 
@@ -64,10 +64,10 @@ def softened(points, passes=2):
     return result + [result[0]] if closed else result
 
 
-def form(strokes, style):
+def form(strokes, style, char=None):
     pieces = []
     cuts = []
-    stitch_layers = []
+    stitched_layers = []
     for points in strokes:
         if style in ("Woven", "Chain", "Stitched", "StitchedUI"):
             width_scale = {"Woven": 1.25, "Chain": 1.14,
@@ -78,18 +78,60 @@ def form(strokes, style):
         line = LineString(points)
         if line.length < 25:
             dot_radius = 24 if style == "Running" else 60 if style == "Stitched" else 49 if style in ("Chain", "StitchedUI") else 34
-            pieces.append(Point(points[0]).buffer(dot_radius, quad_segs=8))
+            dot = Point(points[0]).buffer(dot_radius, quad_segs=8)
             if style == "Stitched":
-                stitch_layers.append(GeometryCollection())
+                stitched_layers.append((dot, None))
+            else:
+                pieces.append(dot)
             continue
         if style == "Running":
             for start in range(0, int(line.length) + 1, 108):
                 segment = substring(line, start, min(start + 55, line.length))
                 if segment.length:
                     pieces.append(segment.buffer(16, cap_style="round", join_style="round", quad_segs=4))
+        elif style == "Stitched":
+            intervals = (10, 11, 10, 12, 10, 11, 10)
+            distance = 0
+            stitch_index = 0
+            core_width = 75 if char == "A" else 94
+            strand_shapes = [line.buffer(core_width, cap_style="flat",
+                                         join_style="bevel" if char == "A" else "round",
+                                         quad_segs=5)]
+            grooves = []
+            apex = line.project(Point(295 * 1.12, 700)) if char == "A" and max(y for _, y in points) > 600 else -100
+            while distance <= line.length:
+                if abs(distance - apex) < 24:
+                    distance += intervals[stitch_index % len(intervals)]
+                    stitch_index += 1
+                    continue
+                center = line.interpolate(distance)
+                before = line.interpolate(max(0, distance - 4))
+                after = line.interpolate(min(line.length, distance + 4))
+                dx, dy = after.x - before.x, after.y - before.y
+                length = max((dx * dx + dy * dy) ** 0.5, 1)
+                nx, ny = -dy / length, dx / length
+                half_width = (80 if char == "A" else 100) + (stitch_index * 3) % 7
+                skew = (-3, -1, 1, 2, 3, -2, 0)[stitch_index % 7]
+                bend = (-2, 1, 0, 2, -1)[stitch_index % 5]
+                thread = LineString([
+                    (center.x - nx * half_width - dx / length * skew,
+                     center.y - ny * half_width - dy / length * skew),
+                    (center.x + dx / length * bend, center.y + dy / length * bend),
+                    (center.x + nx * half_width + dx / length * skew,
+                     center.y + ny * half_width + dy / length * skew),
+                ])
+                thickness = (7.2, 7.6, 7.4, 7.8, 7.3)[stitch_index % 5]
+                strand_shapes.append(thread.buffer(thickness, cap_style="round", join_style="round", quad_segs=3))
+                if 20 < distance < line.length - 20:
+                    grooves.append(thread.buffer(1.1, cap_style="round", join_style="round", quad_segs=2))
+                distance += intervals[stitch_index % len(intervals)]
+                stitch_index += 1
+            stroke_shape = unary_union(strand_shapes)
+            groove_area = unary_union(grooves).intersection(stroke_shape.buffer(-5)) if grooves else None
+            stitched_layers.append((stroke_shape, groove_area))
         else:
             radius = {"Satin": 43, "Applique": 55, "Plain": 36,
-                      "Woven": 77, "Chain": 78, "Stitched": 104, "StitchedUI": 72}[style]
+                      "Woven": 77, "Chain": 78, "StitchedUI": 72}[style]
             pieces.append(line.buffer(radius, cap_style="round", join_style="round", quad_segs=5))
             if style in ("Satin", "Applique", "Woven"):
                 step = {"Satin": 31, "Applique": 48, "Woven": 29}[style]
@@ -134,39 +176,14 @@ def form(strokes, style):
                     entry = Point(center.x - dy / length * side * 75,
                                   center.y + dx / length * side * 75).buffer(5, quad_segs=6)
                     cuts.append(entry)
-            elif style == "Stitched":
-                intervals = (16, 17, 15, 18, 16, 19)
-                distance = 12
-                stitch_index = 0
-                stitch_cuts = []
-                while distance < line.length - 8:
-                    center = line.interpolate(distance)
-                    before = line.interpolate(max(0, distance - 4))
-                    after = line.interpolate(min(line.length, distance + 4))
-                    dx, dy = after.x - before.x, after.y - before.y
-                    length = max((dx * dx + dy * dy) ** 0.5, 1)
-                    nx, ny = -dy / length, dx / length
-                    half_width = 107 if stitch_index % 7 == 0 else 94 + stitch_index % 4
-                    skew = (-5, -2, 0, 3, 5)[stitch_index % 5]
-                    slit = LineString([
-                        (center.x - nx * half_width - dx / length * skew,
-                         center.y - ny * half_width - dy / length * skew),
-                        (center.x + nx * 2, center.y + ny * 2),
-                        (center.x + nx * half_width + dx / length * skew,
-                         center.y + ny * half_width + dy / length * skew),
-                    ])
-                    stitch_cuts.append(slit.buffer(2.1, cap_style="round", join_style="round", quad_segs=2))
-                    distance += intervals[stitch_index % len(intervals)]
-                    stitch_index += 1
-                stitch_layers.append(unary_union(stitch_cuts))
-    shape = unary_union(pieces)
     if style == "Stitched":
-        covered = GeometryCollection()
-        visible_cuts = []
-        for piece, layer_cuts in reversed(list(zip(pieces, stitch_layers))):
-            visible_cuts.append(layer_cuts.difference(covered))
-            covered = covered.union(piece)
-        shape = shape.difference(unary_union(visible_cuts))
+        shape = None
+        for stroke_shape, groove_area in stitched_layers:
+            shape = stroke_shape if shape is None else shape.union(stroke_shape)
+            if groove_area is not None:
+                shape = shape.difference(groove_area)
+    else:
+        shape = unary_union(pieces)
     if cuts:
         shape = shape.difference(unary_union(cuts))
     return shape.simplify(1.4, preserve_topology=True)
@@ -176,7 +193,7 @@ def glyph_geometry(char, style):
     if char in GLYPHS:
         overrides = CHAIN_GLYPHS if style == "Chain" else STITCHED_GLYPHS if style in ("Stitched", "StitchedUI") else {}
         strokes = overrides.get(char, GLYPHS[char])
-        shape = form(strokes, style)
+        shape = form(strokes, style, char)
     else:
         parts = unicodedata.normalize("NFD", char)
         base = "ı" if parts[0] == "i" else parts[0]
@@ -184,7 +201,7 @@ def glyph_geometry(char, style):
         base_strokes = overrides.get(base, GLYPHS[base])
         if base == "j":
             base_strokes = base_strokes[:1]
-        shape = form(base_strokes, style)
+        shape = form(base_strokes, style, base)
         top = shape.bounds[3]
         marks = []
         for mark in parts[1:]:
