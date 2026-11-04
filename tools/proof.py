@@ -5,6 +5,8 @@ from random import Random
 
 from PIL import Image, ImageDraw, ImageFont
 
+from build import STYLES
+
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "specimens"
@@ -93,15 +95,17 @@ def phone(dark):
     draw.line((24, 640, 366, 640), fill=body)
     draw.text((24, 662), "SHIFT  01 / 09", font=font("Satin", 22), fill=body)
     draw.text((24, 714), "Il1  O0  Café  forêt", font=font("Satin", 19), fill=body)
+    draw.text((24, 755), "e é & @ : ; 6", font=font("Satin", 23), fill=body)
     canvas.save(OUTPUT / f"phone-{'night' if dark else 'linen'}.png", optimize=True)
 
 
 def glyphs(style):
     rows = (
         "ABCDEFGHIJKLM", "NOPQRSTUVWXYZ", "abcdefghijklm", "nopqrstuvwxyz",
-        "0123456789!?&", "ÀÁÂÄÅÆÇÈÉÊËÌÍ", "àáâäåæçèéêëìí", "ÑÖØÙÜÝßœøłđþ€",
+        "0123456789!?&", "@&:;.,!?-+*/", "ÀÁÂÄÅÆÇÈÉÊËÌÍ",
+        "àáâäåæçèéêëìí", "ÑÖØÙÜÝßœøłđþ€",
     )
-    canvas = Image.new("RGB", (1600, 1090), LINEN)
+    canvas = Image.new("RGB", (1600, 1210), LINEN)
     cloth(canvas, LINEN)
     draw = ImageDraw.Draw(canvas)
     draw.text((74, 25), f"THREADLINE / {style.upper()}", font=font("Satin", 29), fill=RED)
@@ -121,5 +125,5 @@ if __name__ == "__main__":
     preview()
     phone(False)
     phone(True)
-    for variant in ("Satin", "Woven", "Chain"):
+    for variant in STYLES:
         glyphs(variant)
