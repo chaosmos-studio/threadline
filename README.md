@@ -6,7 +6,7 @@ Threadline is a family of drawn thread paths for games and cloth inspired interf
 Its styles are Running, Satin, Applique, Plain, Woven, and Chain.
 Woven suits large titles, while Satin and Plain remain clearer at smaller sizes.
 
-Get the TTF and WOFF2 files from the [latest release](https://github.com/chaosmos-studio/threadline/releases/latest).
+Download the [TTF and WOFF2 files](fonts/) or browse [versioned releases](https://github.com/chaosmos-studio/threadline/releases).
 
 ## Specimens
 
