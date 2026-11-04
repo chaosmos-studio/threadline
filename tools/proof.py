@@ -96,6 +96,7 @@ def phone(dark):
     draw.text((24, 662), "SHIFT  01 / 09", font=font("Satin", 22), fill=body)
     draw.text((24, 714), "Il1  O0  Café  forêt", font=font("Satin", 19), fill=body)
     draw.text((24, 755), "e é & @ : ; 6", font=font("Satin", 23), fill=body)
+    draw.text((290, 754), "i j", font=font("Woven", 25), fill=title)
     canvas.save(OUTPUT / f"phone-{'night' if dark else 'linen'}.png", optimize=True)
 
 

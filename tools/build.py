@@ -17,7 +17,7 @@ from shapely.ops import substring, unary_union
 
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 sys.path.insert(0, str(ROOT / "source"))
 from paths import ACCENTS, CHAIN_GLYPHS, GLYPHS  # noqa: E402
 
@@ -76,7 +76,11 @@ def form(strokes, style, char=None):
             points = softened(points)
         line = LineString(points)
         if line.length < 25:
-            dot_radius = 24 if style == "Running" else 49 if style == "Chain" else 34
+            if char in ("i", "j"):
+                dot_radius = {"Running": 36, "Satin": 52, "Applique": 58,
+                              "Plain": 47, "Woven": 64, "Chain": 64}[style]
+            else:
+                dot_radius = 24 if style == "Running" else 49 if style == "Chain" else 34
             dot = Point(points[0]).buffer(dot_radius, quad_segs=8)
             pieces.append(dot)
             continue
