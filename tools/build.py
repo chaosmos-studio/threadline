@@ -18,9 +18,9 @@ from shapely.ops import substring, unary_union
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "source"))
-from paths import ACCENTS, CHAIN_GLYPHS, GLYPHS, STITCHED_GLYPHS  # noqa: E402
+from paths import ACCENTS, CHAIN_GLYPHS, GLYPHS  # noqa: E402
 
-STYLES = ("Running", "Satin", "Applique", "Plain", "Woven", "Chain", "Stitched", "StitchedUI")
+STYLES = ("Running", "Satin", "Applique", "Plain", "Woven", "Chain")
 NARROW = "iljı!|':;.,`‘’¡"
 PAIR_VALUES = {
     "AV": -55, "AW": -35, "AY": -50, "AT": -30, "FA": -30,
@@ -67,71 +67,26 @@ def softened(points, passes=2):
 def form(strokes, style, char=None):
     pieces = []
     cuts = []
-    stitched_layers = []
     for points in strokes:
-        if style in ("Woven", "Chain", "Stitched", "StitchedUI"):
-            width_scale = {"Woven": 1.25, "Chain": 1.14,
-                           "Stitched": 1.12, "StitchedUI": 1.12}[style]
+        if style in ("Woven", "Chain"):
+            width_scale = {"Woven": 1.25, "Chain": 1.14}[style]
             points = [(x * width_scale, y) for x, y in points]
         if style == "Chain":
             points = softened(points)
         line = LineString(points)
         if line.length < 25:
-            dot_radius = 24 if style == "Running" else 60 if style == "Stitched" else 49 if style in ("Chain", "StitchedUI") else 34
+            dot_radius = 24 if style == "Running" else 49 if style == "Chain" else 34
             dot = Point(points[0]).buffer(dot_radius, quad_segs=8)
-            if style == "Stitched":
-                stitched_layers.append((dot, None))
-            else:
-                pieces.append(dot)
+            pieces.append(dot)
             continue
         if style == "Running":
             for start in range(0, int(line.length) + 1, 108):
                 segment = substring(line, start, min(start + 55, line.length))
                 if segment.length:
                     pieces.append(segment.buffer(16, cap_style="round", join_style="round", quad_segs=4))
-        elif style == "Stitched":
-            intervals = (10, 11, 10, 12, 10, 11, 10)
-            distance = 0
-            stitch_index = 0
-            core_width = 75 if char == "A" else 94
-            strand_shapes = [line.buffer(core_width, cap_style="flat",
-                                         join_style="bevel" if char == "A" else "round",
-                                         quad_segs=5)]
-            grooves = []
-            apex = line.project(Point(295 * 1.12, 700)) if char == "A" and max(y for _, y in points) > 600 else -100
-            while distance <= line.length:
-                if abs(distance - apex) < 24:
-                    distance += intervals[stitch_index % len(intervals)]
-                    stitch_index += 1
-                    continue
-                center = line.interpolate(distance)
-                before = line.interpolate(max(0, distance - 4))
-                after = line.interpolate(min(line.length, distance + 4))
-                dx, dy = after.x - before.x, after.y - before.y
-                length = max((dx * dx + dy * dy) ** 0.5, 1)
-                nx, ny = -dy / length, dx / length
-                half_width = (80 if char == "A" else 100) + (stitch_index * 3) % 7
-                skew = (-3, -1, 1, 2, 3, -2, 0)[stitch_index % 7]
-                bend = (-2, 1, 0, 2, -1)[stitch_index % 5]
-                thread = LineString([
-                    (center.x - nx * half_width - dx / length * skew,
-                     center.y - ny * half_width - dy / length * skew),
-                    (center.x + dx / length * bend, center.y + dy / length * bend),
-                    (center.x + nx * half_width + dx / length * skew,
-                     center.y + ny * half_width + dy / length * skew),
-                ])
-                thickness = (7.2, 7.6, 7.4, 7.8, 7.3)[stitch_index % 5]
-                strand_shapes.append(thread.buffer(thickness, cap_style="round", join_style="round", quad_segs=3))
-                if 20 < distance < line.length - 20:
-                    grooves.append(thread.buffer(1.1, cap_style="round", join_style="round", quad_segs=2))
-                distance += intervals[stitch_index % len(intervals)]
-                stitch_index += 1
-            stroke_shape = unary_union(strand_shapes)
-            groove_area = unary_union(grooves).intersection(stroke_shape.buffer(-5)) if grooves else None
-            stitched_layers.append((stroke_shape, groove_area))
         else:
             radius = {"Satin": 43, "Applique": 55, "Plain": 36,
-                      "Woven": 77, "Chain": 78, "StitchedUI": 72}[style]
+                      "Woven": 77, "Chain": 78}[style]
             pieces.append(line.buffer(radius, cap_style="round", join_style="round", quad_segs=5))
             if style in ("Satin", "Applique", "Woven"):
                 step = {"Satin": 31, "Applique": 48, "Woven": 29}[style]
@@ -176,14 +131,7 @@ def form(strokes, style, char=None):
                     entry = Point(center.x - dy / length * side * 75,
                                   center.y + dx / length * side * 75).buffer(5, quad_segs=6)
                     cuts.append(entry)
-    if style == "Stitched":
-        shape = None
-        for stroke_shape, groove_area in stitched_layers:
-            shape = stroke_shape if shape is None else shape.union(stroke_shape)
-            if groove_area is not None:
-                shape = shape.difference(groove_area)
-    else:
-        shape = unary_union(pieces)
+    shape = unary_union(pieces)
     if cuts:
         shape = shape.difference(unary_union(cuts))
     return shape.simplify(1.4, preserve_topology=True)
@@ -191,13 +139,13 @@ def form(strokes, style, char=None):
 
 def glyph_geometry(char, style):
     if char in GLYPHS:
-        overrides = CHAIN_GLYPHS if style == "Chain" else STITCHED_GLYPHS if style in ("Stitched", "StitchedUI") else {}
+        overrides = CHAIN_GLYPHS if style == "Chain" else {}
         strokes = overrides.get(char, GLYPHS[char])
         shape = form(strokes, style, char)
     else:
         parts = unicodedata.normalize("NFD", char)
         base = "ı" if parts[0] == "i" else parts[0]
-        overrides = CHAIN_GLYPHS if style == "Chain" else STITCHED_GLYPHS if style in ("Stitched", "StitchedUI") else {}
+        overrides = CHAIN_GLYPHS if style == "Chain" else {}
         base_strokes = overrides.get(base, GLYPHS[base])
         if base == "j":
             base_strokes = base_strokes[:1]
@@ -205,16 +153,16 @@ def glyph_geometry(char, style):
         top = shape.bounds[3]
         marks = []
         for mark in parts[1:]:
-            mark_shape = form(ACCENTS[mark], "Plain" if style in ("Chain", "Stitched", "StitchedUI") else style)
+            mark_shape = form(ACCENTS[mark], "Plain" if style == "Chain" else style)
             if mark in ("\u0327", "\u0328"):
                 mark_shape = translate(mark_shape, yoff=-25)
             else:
-                mark_shape = translate(mark_shape, yoff=top - 700 + (45 if style in ("Chain", "Stitched", "StitchedUI") else 0))
-            if style in ("Chain", "Stitched", "StitchedUI"):
-                mark_shape = translate(mark_shape, xoff=42 if style == "Chain" else 36)
+                mark_shape = translate(mark_shape, yoff=top - 700 + (45 if style == "Chain" else 0))
+            if style == "Chain":
+                mark_shape = translate(mark_shape, xoff=42)
             marks.append(mark_shape)
         shape = unary_union([shape, *marks])
-    if style in ("Woven", "Chain", "Stitched", "StitchedUI"):
+    if style in ("Woven", "Chain"):
         if style == "Chain":
             tilt = (-4.0, -1.6, 1.5, 3.6, 0.0)[ord(char) % 5]
             lift = (-27, 0, 24)[ord(char) % 3]
@@ -284,9 +232,9 @@ def save_woff2(path):
 
 
 def build(style, characters):
-    family = "Threadline Stitched UI" if style == "StitchedUI" else f"Threadline {style}"
-    ascent = 1120 if style in ("Stitched", "StitchedUI") else 1100 if style == "Chain" else 1050 if style == "Woven" else 1000
-    descent = 330 if style in ("Stitched", "StitchedUI") else 320 if style in ("Woven", "Chain") else 300
+    family = f"Threadline {style}"
+    ascent = 1100 if style == "Chain" else 1050 if style == "Woven" else 1000
+    descent = 320 if style in ("Woven", "Chain") else 300
     order = [".notdef", "space"] + [f"uni{ord(char):04X}" for char in sorted(characters)]
     notdef = Point(300, 350).buffer(225).boundary.buffer(28)
     glyphs = {".notdef": to_glyph(notdef), "space": TTGlyphPen(None).glyph()}
@@ -295,7 +243,7 @@ def build(style, characters):
     for char in sorted(characters):
         name = f"uni{ord(char):04X}"
         shape = glyph_geometry(char, style)
-        if style in ("Woven", "Chain", "Stitched", "StitchedUI"):
+        if style in ("Woven", "Chain"):
             advance = round(shape.bounds[2] + (45 if style == "Woven" else 35))
         elif is_narrow(char):
             advance = 350
@@ -328,7 +276,7 @@ def build(style, characters):
         sTypoAscender=ascent, sTypoDescender=-descent,
         usWinAscent=ascent, usWinDescent=descent,
         sxHeight=490, sCapHeight=700,
-        usWeightClass=800 if style in ("Woven", "Stitched") else 400 if style in ("Running", "Plain") else 700,
+        usWeightClass=800 if style == "Woven" else 400 if style in ("Running", "Plain") else 700,
         fsSelection=0xC0, fsType=0,
     )
     builder.setupPost()
