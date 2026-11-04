@@ -7,7 +7,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "specimens"
-STYLES = ("Running", "Satin", "Applique", "Plain", "Woven", "Chain")
+STYLES = ("Running", "Satin", "Applique", "Plain", "Woven", "Chain", "Stitched", "StitchedUI")
 WORDS = ("PLAY", "LEVELS", "SETTINGS", "SHIFT", "The First Stitch", "0123456789")
 SENTENCE = "A small shift can change a whole world."
 COLORS = {
@@ -108,11 +108,17 @@ def phone_contact_sheet():
     print(target)
 
 
-def raised_text(canvas, position, content, pixels, thread_color, shade_color, highlight_color):
+def raised_text(canvas, position, content, pixels, thread_color, shade_color, highlight_color,
+                style="Chain"):
     mask = Image.new("L", canvas.size)
-    ImageDraw.Draw(mask).text(position, content, font=font("Chain", pixels), fill=255)
+    ImageDraw.Draw(mask).text(position, content, font=font(style, pixels), fill=255)
     shadow = ImageChops.offset(mask, 4, 5).filter(ImageFilter.GaussianBlur(3))
     canvas.paste(shade_color, (0, 0), shadow)
+    if style == "Stitched":
+        underlay = Image.new("L", canvas.size)
+        ImageDraw.Draw(underlay).text(position, content, font=font(style, pixels), fill=255,
+                                        stroke_width=max(1, pixels // 180), stroke_fill=255)
+        canvas.paste(shade_color, (0, 0), underlay)
     canvas.paste(thread_color, (0, 0), mask)
     highlight = ImageChops.subtract(mask, ImageChops.offset(mask, 0, 2))
     canvas.paste(highlight_color, (0, 0), highlight)
@@ -158,7 +164,7 @@ def chain_cloth_page():
     print(target)
 
 
-def chain_glyph_page():
+def glyph_page(style):
     rows = (
         "ABCDEFGHIJKLM",
         "NOPQRSTUVWXYZ",
@@ -172,15 +178,73 @@ def chain_glyph_page():
     canvas = Image.new("RGB", (1600, 1120), (245, 235, 215))
     draw = ImageDraw.Draw(canvas)
     weave(draw, (0, 0, 1600, 1120), (245, 235, 215), (238, 225, 203))
-    draw.text((75, 38), "THREADLINE CHAIN / GLYPH REVIEW", font=meta(30), fill=(94, 71, 65))
+    draw.text((75, 38), f"THREADLINE {style.upper()} / GLYPH REVIEW",
+              font=meta(30), fill=(94, 71, 65))
     for row_index, row in enumerate(rows):
         top = 115 + row_index * 122
         for column, char in enumerate(row):
             left = 68 + column * 112
             draw.rounded_rectangle((left, top, left + 100, top + 105), radius=9,
                                    outline=(210, 191, 166), width=2)
-            draw.text((left + 18, top + 11), char, font=font("Chain", 68), fill=(62, 54, 52))
-    target = OUTPUT / "chain-glyphs.png"
+            draw.text((left + 18, top + 11), char, font=font(style, 68), fill=(62, 54, 52))
+    target = OUTPUT / f"{style.lower()}-glyphs.png"
+    canvas.save(target, optimize=True)
+    print(target)
+
+
+def stitched_reference_page():
+    canvas = Image.new("RGB", (1600, 1000), (227, 226, 216))
+    draw = ImageDraw.Draw(canvas)
+    for x in range(0, 1600, 5):
+        draw.line((x, 0, x, 1000), fill=(218, 218, 208), width=1)
+    for y in range(0, 1000, 6):
+        draw.line((0, y, 1600, y), fill=(214, 215, 205), width=1)
+    draw.text((82, 58), "THREADLINE STITCHED / SATIN EMBROIDERY STUDY",
+              font=meta(25), fill=(68, 66, 62))
+    for left, glyph, colors in (
+        (300, "A", ((194, 52, 119), (104, 42, 78), (243, 128, 169))),
+        (650, "B", ((68, 49, 136), (38, 33, 81), (143, 116, 202))),
+        (980, "C", ((221, 49, 42), (120, 38, 39), (255, 125, 104))),
+    ):
+        raised_text(canvas, (left, 65), glyph, 400, *colors, style="Stitched")
+    draw = ImageDraw.Draw(canvas)
+    draw.line((82, 555, 1518, 555), fill=(153, 151, 140), width=2)
+    raised_text(canvas, (100, 590), "SHIFT", 148,
+                (176, 71, 72), (91, 49, 50), (236, 143, 134), style="Stitched")
+    draw = ImageDraw.Draw(canvas)
+    draw.text((760, 633), "PLAY  LEVELS  SETTINGS", font=font("Stitched", 50),
+              fill=(62, 58, 59))
+    draw.text((105, 835), SENTENCE,
+              font=fitted_font("StitchedUI", SENTENCE, 35, 1320), fill=(62, 58, 59))
+    target = OUTPUT / "stitched-embroidery.png"
+    canvas.save(target, optimize=True)
+    print(target)
+
+
+def stitched_pair_phone(dark):
+    background = (44, 53, 59) if dark else COLORS["linen"]
+    ink = (246, 231, 205) if dark else (58, 53, 49)
+    title_color = (251, 200, 144) if dark else (169, 66, 73)
+    canvas = Image.new("RGB", (390, 844), background)
+    draw = ImageDraw.Draw(canvas)
+    weave(draw, (0, 0, 390, 844), background,
+          (48, 58, 64) if dark else (235, 222, 199))
+    draw.text((24, 24), "390 x 844 px / 1:1", font=meta(13), fill=ink)
+    draw.line((24, 55, 366, 55), fill=ink, width=1)
+    draw.text((24, 80), "SHIFT", font=font("Stitched", 65), fill=title_color)
+    draw.text((24, 183), "The First Stitch",
+              font=fitted_font("StitchedUI", "The First Stitch", 31, 342), fill=ink)
+    for index, word in enumerate(("PLAY", "LEVELS", "SETTINGS")):
+        top = 260 + index * 88
+        draw.rounded_rectangle((22, top - 7, 368, top + 61), radius=11,
+                               outline=ink, width=2)
+        draw.text((42, top + 1), word, font=font("StitchedUI", 35), fill=ink)
+    draw.text((24, 545), "A small shift can", font=font("StitchedUI", 24), fill=ink)
+    draw.text((24, 580), "change a whole world.", font=font("StitchedUI", 24), fill=ink)
+    draw.line((24, 650, 366, 650), fill=ink, width=1)
+    draw.text((24, 675), "SHIFT  01 / 09", font=font("StitchedUI", 22), fill=ink)
+    draw.text((24, 724), "Il1  O0  Café  forêt", font=font("StitchedUI", 19), fill=ink)
+    target = OUTPUT / f"stitched-pair-{'night' if dark else 'linen'}.png"
     canvas.save(target, optimize=True)
     print(target)
 
@@ -193,4 +257,8 @@ if __name__ == "__main__":
         phone_page(variant, True)
     phone_contact_sheet()
     chain_cloth_page()
-    chain_glyph_page()
+    for variant in ("Chain", "Stitched", "StitchedUI"):
+        glyph_page(variant)
+    stitched_reference_page()
+    stitched_pair_phone(False)
+    stitched_pair_phone(True)
