@@ -27,7 +27,8 @@ def check(style):
     assert font["OS/2"].usWinAscent >= font["head"].yMax, style
     assert font["OS/2"].usWinDescent >= -font["head"].yMin, style
     assert "GPOS" in font, style
-    assert font["name"].getDebugName(1) == f"Threadline {style}", style
+    family = "Threadline Stitched UI" if style == "StitchedUI" else f"Threadline {style}"
+    assert font["name"].getDebugName(1) == family, style
     assert font["name"].getDebugName(2) == "Regular", style
     assert webfont.flavor == "woff2", style
     for codepoint, name in cmap.items():
