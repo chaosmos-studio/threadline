@@ -13,7 +13,6 @@ The project discloses AI assistance in `CONTRIBUTORS.txt`.
 
 - Review the outlines, spacing, accents, and small-size specimens as a designer.
 - Confirm the copyright authors and that no larger retail version of any family exists.
-- Resolve Google Fonts' preference for one upstream repository per family because this repository contains six named families.
 - Run the network-dependent Google Fonts checks when the project is staged in the Google Fonts repository.
 - Get Shravanpuri Goswami's approval before opening any Google Fonts issue or pull request.
 
