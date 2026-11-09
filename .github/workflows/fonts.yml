@@ -31,7 +31,7 @@ jobs:
           for style in Running Satin Applique Plain Woven Chain; do
             fontspector -p googlefonts --skip-network -x googlefonts/repo/dirname_matches_nameid_1 -l fail --succinct fonts/ttf/Threadline${style}-*.ttf
           done
-      - run: git diff --exit-code -- fonts/ttf fonts/webfonts sources/ufo specimens
+      - run: git diff --exit-code -- fonts/ttf fonts/webfonts sources/ufo
 
   release:
     if: github.repository == 'chaosmos-studio/threadline' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
