@@ -25,6 +25,8 @@ jobs:
       - uses: fonttools/setup-fontspector@d53404291dc78a5a41cf76ea48e1d13a731fb812
         with:
           version: 1.9.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - run: |
           for style in Running Satin Applique Plain Woven Chain; do
             fontspector -p googlefonts --skip-network -x googlefonts/repo/dirname_matches_nameid_1 -l fail --succinct fonts/ttf/Threadline${style}-*.ttf
