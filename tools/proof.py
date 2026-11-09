@@ -5,7 +5,7 @@ from random import Random
 
 from PIL import Image, ImageDraw, ImageFont
 
-from build import STYLES
+from build import STYLES, WEIGHTS, filename
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,8 +18,9 @@ RED = (166, 62, 71)
 GOLD = (237, 183, 124)
 
 
-def font(style, size):
-    return ImageFont.truetype(ROOT / "fonts" / f"Threadline-{style}.ttf", size)
+def font(style, size, weight=None):
+    weight = weight or WEIGHTS[style][-1]
+    return ImageFont.truetype(ROOT / "fonts" / "ttf" / f"{filename(style, weight)}.ttf", size)
 
 
 def fitted_font(style, text, size, width):
@@ -100,24 +101,44 @@ def phone(dark):
     canvas.save(OUTPUT / f"phone-{'night' if dark else 'linen'}.png", optimize=True)
 
 
-def glyphs(style):
+def glyphs(style, weight=None):
+    weight = weight or WEIGHTS[style][-1]
     rows = (
         "ABCDEFGHIJKLM", "NOPQRSTUVWXYZ", "abcdefghijklm", "nopqrstuvwxyz",
         "0123456789!?&", "@&:;.,!?-+*/", "ÀÁÂÄÅÆÇÈÉÊËÌÍ",
-        "àáâäåæçèéêëìí", "ÑÖØÙÜÝßœøłđþ€",
+        "àáâäåæçèéêëìí", "ÑÖØÙÜÝßœøł€₹◌",
     )
     canvas = Image.new("RGB", (1600, 1210), LINEN)
     cloth(canvas, LINEN)
     draw = ImageDraw.Draw(canvas)
-    draw.text((74, 25), f"THREADLINE / {style.upper()}", font=font("Satin", 29), fill=RED)
+    draw.text((74, 25), f"THREADLINE / {style.upper()} / {weight.upper()}",
+              font=font("Satin", 29, "Regular"), fill=RED)
     for row_index, row in enumerate(rows):
         top = 100 + row_index * 121
         for column, char in enumerate(row):
             left = 68 + column * 112
             draw.rounded_rectangle((left, top, left + 100, top + 104), radius=8,
                                    outline=(202, 184, 161), width=2)
-            draw.text((left + 16, top + 9), char, font=font(style, 68), fill=INK)
-    canvas.save(OUTPUT / f"glyphs-{style.lower()}.png", optimize=True)
+            draw.text((left + 16, top + 9), char, font=font(style, 68, weight), fill=INK)
+    canvas.save(OUTPUT / f"glyphs-{style.lower()}-{weight.lower()}.png", optimize=True)
+
+
+def weights():
+    canvas = Image.new("RGB", (1400, 1830), LINEN)
+    cloth(canvas, LINEN)
+    draw = ImageDraw.Draw(canvas)
+    draw.text((70, 25), "THREADLINE / FAMILY WEIGHTS", font=font("Plain", 34), fill=INK)
+    samples = [(style, weight) for style in STYLES for weight in WEIGHTS[style]]
+    for index, (style, weight) in enumerate(samples):
+        top = 90 + index * 170
+        draw.text((74, top), f"Threadline {style} / {weight}", font=font("Plain", 27), fill=INK)
+        sample = "The First Stitch 0123456789"
+        face = font(style, 58, weight)
+        while face.getlength(sample) > 1240:
+            face = font(style, face.size - 1, weight)
+        draw.text((74, top + 38), sample, font=face, fill=RED if style == "Woven" else INK)
+        draw.line((74, top + 150, 1326, top + 150), fill=(202, 184, 161), width=2)
+    canvas.save(OUTPUT / "weights.png", optimize=True)
 
 
 if __name__ == "__main__":
@@ -126,5 +147,7 @@ if __name__ == "__main__":
     preview()
     phone(False)
     phone(True)
+    weights()
     for variant in STYLES:
-        glyphs(variant)
+        for weight in WEIGHTS[variant]:
+            glyphs(variant, weight)
