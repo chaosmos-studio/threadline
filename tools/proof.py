@@ -64,14 +64,24 @@ def wordmark():
 
 
 def preview():
-    canvas = Image.new("RGB", (1400, 840), LINEN)
+    canvas = Image.new("RGB", (1600, 1560), LINEN)
     cloth(canvas, LINEN)
     draw = ImageDraw.Draw(canvas)
-    centered(draw, 72, "THREADLINE", fitted_font("Woven", "THREADLINE", 178, 1280), RED, canvas.width)
-    draw.line((100, 355, 1300, 355), fill=(202, 184, 161), width=2)
-    centered(draw, 400, "PLAY   LEVELS   SETTINGS", font("Chain", 62), INK, canvas.width)
-    centered(draw, 520, "The First Stitch", font("Satin", 62), INK, canvas.width)
-    centered(draw, 640, "SHIFT  0123456789", font("Satin", 55), INK, canvas.width)
+    centered(draw, 55, "THREADLINE", fitted_font("Woven", "THREADLINE", 180, 1440), RED, canvas.width)
+    draw.line((80, 310, 1520, 310), fill=(202, 184, 161), width=2)
+    pangram = "The quick brown fox jumps over the lazy dog."
+    samples = (("Running", "Regular"), ("Satin", "Bold"), ("Applique", "Bold"),
+               ("Plain", "Regular"), ("Woven", "ExtraBold"), ("Chain", "Bold"))
+    for index, (style, weight) in enumerate(samples):
+        top = 335 + index * 200
+        draw.text((80, top), f"{style.upper()} / {weight.upper()}",
+                  font=font("Plain", 28, "Regular"), fill=INK)
+        size = 60
+        while font(style, size, weight).getlength(pangram) > 1440:
+            size -= 1
+        draw.text((80, top + 48), pangram, font=font(style, size, weight),
+                  fill=RED if style == "Woven" else INK)
+        draw.line((80, top + 165, 1520, top + 165), fill=(202, 184, 161), width=2)
     canvas.save(OUTPUT / "preview.png", optimize=True)
 
 
