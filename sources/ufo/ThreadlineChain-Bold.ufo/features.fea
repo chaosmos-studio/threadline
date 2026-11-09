@@ -257,7 +257,7 @@ feature mark {
   pos base uni0124 <anchor 367 1048> mark @TOP <anchor 367 -109> mark @BOTTOM;
   pos base uni0125 <anchor 365 1072> mark @TOP <anchor 365 -92> mark @BOTTOM;
   pos base uni0126 <anchor 415 786> mark @TOP <anchor 415 -130> mark @BOTTOM;
-  pos base uni0127 <anchor 354 826> mark @TOP <anchor 354 -120> mark @BOTTOM;
+  pos base uni0127 <anchor 353 826> mark @TOP <anchor 353 -120> mark @BOTTOM;
   pos base uni0128 <anchor 305 1044> mark @TOP <anchor 305 -84> mark @BOTTOM;
   pos base uni0129 <anchor 182 785> mark @TOP <anchor 182 -130> mark @BOTTOM;
   pos base uni012A <anchor 317 995> mark @TOP <anchor 317 -113> mark @BOTTOM;
